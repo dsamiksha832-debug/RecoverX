@@ -1,4 +1,4 @@
-git statuscmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16)
 project(RecoverX VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -30,3 +30,7 @@ enable_testing()
 add_executable(recoverx_smoke_test tests/smoke_test.cpp)
 target_link_libraries(recoverx_smoke_test PRIVATE recoverx_core)
 add_test(NAME recoverx_smoke_test COMMAND recoverx_smoke_test)
+
+add_executable(recoverx_simulator_test tests/simulator_test.cpp)
+target_link_libraries(recoverx_simulator_test PRIVATE recoverx_core)
+add_test(NAME recoverx_simulator_test COMMAND recoverx_simulator_test)
