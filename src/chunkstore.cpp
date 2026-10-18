@@ -151,10 +151,7 @@ bool ChunkStore::restoreToFile(const std::vector<std::string>& contentIds,
     }
 
     if (ok) {
-        fs::rename(tmp, outputPath, ec);
-        if (ec) {
-            ok = false;
-        }
+        ok = replaceFile(tmp, outputPath);
     }
     if (!ok) {
         fs::remove(tmp, ec);
