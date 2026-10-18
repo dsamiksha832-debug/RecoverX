@@ -14,6 +14,10 @@ namespace recoverx {
 // (OS specific) - listed as future work in the PRD.
 bool atomicWriteFile(const std::string& path, const std::vector<std::uint8_t>& bytes);
 
+// Moves `from` over `to`, replacing it if it exists. Atomic on POSIX; on Windows uses
+// MoveFileExW(REPLACE_EXISTING). Returns false on failure (`from` is left in place).
+bool replaceFile(const std::string& from, const std::string& to);
+
 // Reads a whole regular file in binary mode. Returns false if it is missing or unreadable.
 // Intended for small files (chunks, manifests); use ChunkReader for large files.
 bool readFileBytes(const std::string& path, std::vector<std::uint8_t>& bytes);
