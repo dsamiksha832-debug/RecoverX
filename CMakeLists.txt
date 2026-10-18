@@ -45,6 +45,7 @@ add_executable(recoverx_smoke_test tests/smoke_test.cpp)
 target_link_libraries(recoverx_smoke_test PRIVATE recoverx_core)
 add_test(NAME recoverx_smoke_test COMMAND recoverx_smoke_test)
 
+
 add_executable(recoverx_storage_test tests/storage_test.cpp ${RECOVERX_SHA256_STUB})
 target_link_libraries(recoverx_storage_test PRIVATE recoverx_core)
 add_test(NAME recoverx_storage_test COMMAND recoverx_storage_test)
@@ -56,3 +57,7 @@ add_test(NAME recoverx_versioning_test COMMAND recoverx_versioning_test)
 add_executable(recoverx_recovery_integration_test tests/recovery_integration_test.cpp ${RECOVERX_SHA256_STUB})
 target_link_libraries(recoverx_recovery_integration_test PRIVATE recoverx_core)
 add_test(NAME recoverx_recovery_integration_test COMMAND recoverx_recovery_integration_test)
+
+add_executable(recoverx_simulator_test tests/simulator_test.cpp)
+target_link_libraries(recoverx_simulator_test PRIVATE recoverx_core)
+add_test(NAME recoverx_simulator_test COMMAND recoverx_simulator_test)
