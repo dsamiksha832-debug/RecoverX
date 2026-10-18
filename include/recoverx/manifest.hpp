@@ -4,7 +4,7 @@
 
 namespace recoverx {
 
-// Placeholder API contract. Manifest writes must later use temp-file + rename.
+// Versioned binary manifest. Writes use a temporary file and atomic replacement.
 bool writeManifest(const std::string& path, const VersionInfo& version);
 bool readManifest(const std::string& path, VersionInfo& version);
 
