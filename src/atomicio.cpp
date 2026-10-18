@@ -4,9 +4,27 @@
 #include <fstream>
 #include <system_error>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace recoverx {
 
 namespace fs = std::filesystem;
+
+bool replaceFile(const std::string& from, const std::string& to) {
+#ifdef _WIN32
+    return MoveFileExW(fs::path(from).c_str(), fs::path(to).c_str(),
+                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+    std::error_code ec;
+    fs::rename(from, to, ec); // POSIX rename atomically replaces the destination
+    return !ec;
+#endif
+}
 
 bool atomicWriteFile(const std::string& path, const std::vector<std::uint8_t>& bytes) {
     const std::string tmp = path + ".tmp";
@@ -32,8 +50,7 @@ bool atomicWriteFile(const std::string& path, const std::vector<std::uint8_t>& b
         return false;
     }
 
-    fs::rename(tmp, path, ec);
-    if (ec) {
+    if (!replaceFile(tmp, path)) {
         fs::remove(tmp, ec);
         return false;
     }
