@@ -75,8 +75,41 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "undo failed: ${result}")
 endif()
 file(READ "${source}" undone)
-if(NOT undone STREQUAL original)
-    message(FATAL_ERROR "undo did not restore the previous contents")
+if(NOT undone STREQUAL edited)
+    message(FATAL_ERROR "undo did not bring back the contents from before the recovery")
+endif()
+
+# The undo stack is now empty, so a second undo must fail.
+execute_process(COMMAND "${RECOVERX_EXE}" undo "${source}" "${store}" RESULT_VARIABLE result)
+if(result EQUAL 0)
+    message(FATAL_ERROR "undo with an empty stack unexpectedly succeeded")
+endif()
+
+# recover --to restores exactly the requested version.
+execute_process(COMMAND "${RECOVERX_EXE}" recover "${source}" "${store}" --to V1 RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "recover --to V1 failed: ${result}")
+endif()
+file(READ "${source}" recovered_to)
+if(NOT recovered_to STREQUAL original)
+    message(FATAL_ERROR "recover --to V1 did not restore version 1")
+endif()
+# ... and refuses the corrupted version without falling back.
+execute_process(COMMAND "${RECOVERX_EXE}" recover "${source}" "${store}" --to 2 RESULT_VARIABLE result)
+if(result EQUAL 0)
+    message(FATAL_ERROR "recover --to 2 unexpectedly restored a corrupted version")
+endif()
+
+# hash prints CRC-32, Internet checksum and SHA-256 of a real file.
+execute_process(COMMAND "${RECOVERX_EXE}" hash "${source}" RESULT_VARIABLE result OUTPUT_VARIABLE hash_output)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "hash failed: ${result}")
+endif()
+string(FIND "${hash_output}" "SHA-256:" has_sha)
+string(FIND "${hash_output}" "CRC-32:" has_crc)
+string(FIND "${hash_output}" "Internet checksum:" has_sum)
+if(has_sha EQUAL -1 OR has_crc EQUAL -1 OR has_sum EQUAL -1)
+    message(FATAL_ERROR "hash output is missing a checksum line")
 endif()
 
 set(benchmark_dir "${test_root}/benchmark reports")

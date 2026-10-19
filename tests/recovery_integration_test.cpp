@@ -79,10 +79,12 @@ int main() {
     CHECK(recoverLatestValidVersion(source.string(), storeRoot.string()));
     CHECK(readBytes(source) == original);
 
-    // Undo skips the newest snapshot and restores the earlier valid snapshot.
-    // Its target already contains that snapshot, so verify operation success and output.
+    // Recovery pushed the file's previous contents (the edited text) on the undo stack,
+    // so undo brings exactly that state back.
     CHECK(undoLastChange(source.string(), storeRoot.string()));
-    CHECK(readBytes(source) == original);
+    CHECK(readBytes(source) == edited);
+    // The stack is now empty.
+    CHECK(!undoLastChange(source.string(), storeRoot.string()));
 
     // A malformed unrelated manifest is ignored during history discovery.
     writeBytes(storeRoot / "manifests" / "version_999.rxm", Bytes{'b', 'a', 'd'});
