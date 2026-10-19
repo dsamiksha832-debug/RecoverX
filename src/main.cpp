@@ -14,9 +14,11 @@
 #include <cctype>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <ctime>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
@@ -46,6 +48,7 @@ void printUsage(std::ostream& out) {
         << "  recoverx hash <file>\n"
         << "  recoverx checksum\n"
         << "  recoverx bench [output-dir] [trials-per-mode]\n"
+        << "  recoverx menu                             (guided, menu-driven demo)\n"
         << "  recoverx help\n\n"
         << "Store directory defaults to .recoverx in the current directory.\n"
         << "Use the same file path for backup, list, verify, recover and undo.\n"
@@ -201,6 +204,161 @@ int printRecoveryReport(const std::string& target, const recoverx::RecoveryRepor
     return 0;
 }
 
+int run(int argc, char** argv);
+
+// ---------------------------------------------------------------------------------------------
+// Menu-driven demo. Every menu item calls the same run() the normal commands use, so the output
+// is identical to typing the command by hand. The chosen file is copied into ./recoverx_demo so
+// the original is never modified.
+// ---------------------------------------------------------------------------------------------
+
+std::string trimText(std::string text) {
+    const char* spaces = " \t\r\n";
+    const std::size_t first = text.find_first_not_of(spaces);
+    if (first == std::string::npos) return {};
+    const std::size_t last = text.find_last_not_of(spaces);
+    return text.substr(first, last - first + 1);
+}
+
+// Cleans a path typed or dragged into the terminal: quotes, backslash-escaped spaces, "~".
+std::string cleanPath(std::string text) {
+    text = trimText(text);
+    if (text.size() >= 2 && ((text.front() == '"' && text.back() == '"') ||
+                             (text.front() == '\'' && text.back() == '\''))) {
+        text = text.substr(1, text.size() - 2);
+    }
+#ifndef _WIN32
+    std::string unescaped;
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (text[i] == '\\' && i + 1 < text.size()) ++i;
+        unescaped += text[i];
+    }
+    text = unescaped;
+#endif
+    if (!text.empty() && text[0] == '~' && (text.size() == 1 || text[1] == '/' || text[1] == '\\')) {
+        const char* home = std::getenv("HOME");
+        if (home == nullptr) home = std::getenv("USERPROFILE");
+        if (home != nullptr) text = std::string(home) + text.substr(1);
+    }
+    return text;
+}
+
+bool readLine(const std::string& prompt, std::string& line) {
+    std::cout << prompt << std::flush;
+    if (!std::getline(std::cin, line)) return false;
+    line = trimText(line);
+    return true;
+}
+
+// Prints the equivalent command, then runs it through the normal command dispatcher.
+void runShown(const std::vector<std::string>& args) {
+    std::cout << "\n$ recoverx";
+    for (const std::string& a : args) std::cout << ' ' << a;
+    std::cout << '\n';
+    std::vector<std::string> full{"recoverx"};
+    full.insert(full.end(), args.begin(), args.end());
+    std::vector<char*> pointers;
+    for (std::string& a : full) pointers.push_back(&a[0]);
+    try {
+        run(static_cast<int>(pointers.size()), pointers.data());
+    } catch (const std::exception& error) {
+        std::cerr << "Error: " << error.what() << '\n';
+    }
+}
+
+// Overwrites 6 bytes in the middle of the file so exactly one chunk changes (file size is kept).
+bool editFile(const std::string& path, int counter) {
+    std::error_code ec;
+    const auto size = std::filesystem::file_size(path, ec);
+    if (ec) return false;
+    std::string text = "EDIT";
+    text += static_cast<char>('0' + (counter / 10) % 10);
+    text += static_cast<char>('0' + counter % 10);
+    std::fstream file(path, std::ios::in | std::ios::out | std::ios::binary);
+    if (!file) return false;
+    const std::uintmax_t position = size >= text.size() ? (size / 2) : size;
+    file.seekp(static_cast<std::streamoff>(position));
+    file.write(text.data(), static_cast<std::streamsize>(text.size()));
+    return static_cast<bool>(file);
+}
+
+int runMenu() {
+    namespace fs = std::filesystem;
+    std::cout << "RecoverX guided demo\n"
+              << "Your file is copied into ./recoverx_demo, so the original is never changed.\n\n";
+
+    std::string input;
+    if (!readLine("Enter the path of the file to protect: ", input)) return 0;
+    const std::string source = cleanPath(input);
+    std::error_code ec;
+    if (source.empty() || !fs::is_regular_file(source, ec)) {
+        return reportOperation(false, {}, "cannot find a file at: " + source);
+    }
+
+    const fs::path workDir = "recoverx_demo";
+    fs::create_directories(workDir, ec);
+    const std::string file = (workDir / fs::path(source).filename()).string();
+    const std::string store = (workDir / "store").string();
+    fs::copy_file(source, file, fs::copy_options::overwrite_existing, ec);
+    if (ec) return reportOperation(false, {}, "cannot copy the file: " + ec.message());
+    std::cout << "Working copy: " << file << "\nBackup store: " << store << '\n';
+
+    int editCount = 0;
+    for (;;) {
+        std::cout << "\n==================== MENU ====================\n"
+                  << " 1. Backup this file (creates a new version)\n"
+                  << " 2. List versions\n"
+                  << " 3. Edit the file (small change, then use 1 again)\n"
+                  << " 4. Verify a version\n"
+                  << " 5. Corrupt a version (simulate damage)\n"
+                  << " 6. Recover (restore the newest healthy version)\n"
+                  << " 7. Show hashes of the file\n"
+                  << " 8. Undo the last recover\n"
+                  << " 9. Experiments (detection table and storage saving)\n"
+                  << " 0. Exit\n"
+                  << "==============================================\n";
+        std::string choice;
+        if (!readLine("Choose: ", choice) || choice == "0") break;
+
+        if (choice == "1") {
+            runShown({"backup", file, store, "4096"});
+        } else if (choice == "2") {
+            runShown({"list", file, store});
+        } else if (choice == "3") {
+            if (editFile(file, ++editCount)) {
+                std::cout << "\nEdited 6 bytes in " << file << ". Choose 1 to back up the new version.\n";
+            } else {
+                std::cerr << "Error: could not edit " << file << '\n';
+            }
+        } else if (choice == "4") {
+            std::string id;
+            if (!readLine("Version number to verify: ", id)) break;
+            runShown({"verify", id, store});
+        } else if (choice == "5") {
+            std::string id, mode;
+            if (!readLine("Version number to corrupt: ", id)) break;
+            if (!readLine("Mode (bitflip, burst, swap, truncate, zero, deletechunk) [burst]: ", mode)) break;
+            if (mode.empty()) mode = "burst";
+            runShown({"corrupt", file, id, mode, store});
+        } else if (choice == "6") {
+            runShown({"recover", file, store});
+        } else if (choice == "7") {
+            runShown({"hash", file});
+        } else if (choice == "8") {
+            runShown({"undo", file, store});
+        } else if (choice == "9") {
+            const std::string benchDir = (workDir / "bench_out").string();
+            runShown({"bench", benchDir, "1000"});
+            std::ifstream report(fs::path(benchDir) / "benchmark_report.md");
+            if (report) std::cout << '\n' << report.rdbuf();
+        } else {
+            std::cout << "Please choose a number from the menu.\n";
+        }
+    }
+    std::cout << "\nGoodbye. Demo files are in ./recoverx_demo\n";
+    return 0;
+}
+
 int run(int argc, char** argv) {
     if (argc < 2 || std::string(argv[1]) == "help" || std::string(argv[1]) == "--help" ||
         std::string(argv[1]) == "-h") {
@@ -209,6 +367,7 @@ int run(int argc, char** argv) {
     }
 
     const std::string command = argv[1];
+    if (command == "menu") return runMenu();
     if (command == "checksum") {
         const std::vector<std::uint8_t> sample{'R', 'e', 'c', 'o', 'v', 'e', 'r', 'X'};
         std::cout << "Sample data: RecoverX (8 bytes)\n"
