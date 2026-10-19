@@ -1,4 +1,5 @@
 #include "recoverx/chunkstore.hpp"
+#include "recoverx/benchmark.hpp"
 #include "recoverx/checksum.hpp"
 #include "recoverx/crc32.hpp"
 #include "recoverx/manifest.hpp"
@@ -37,6 +38,7 @@ void printUsage(std::ostream& out) {
         << "  recoverx undo <file> [store-dir]\n"
         << "  recoverx corrupt <file> <version-id> <mode> [store-dir]\n"
         << "  recoverx checksum\n"
+        << "  recoverx bench [output-dir] [trials-per-mode]\n"
         << "  recoverx help\n\n"
         << "Store directory defaults to .recoverx in the current directory.\n"
         << "Corruption modes: bitflip, burst, swap, truncate, zero, deletechunk.\n";
@@ -127,6 +129,33 @@ int run(int argc, char** argv) {
         std::cout << "CRC-32: 0x" << std::hex << recoverx::crc32(sample) << '\n'
                   << "Internet checksum: 0x" << recoverx::internetChecksum(sample)
                   << std::dec << '\n';
+        return 0;
+    }
+
+    if (command == "bench") {
+        if (argc < 2 || argc > 4) {
+            printUsage(std::cerr);
+            return 2;
+        }
+        const std::string outputDirectory = argc >= 3
+            ? argv[2] : std::string(kDefaultStore) + "/bench";
+        std::size_t trialsPerMode = 1000;
+        if (argc == 4) {
+            unsigned long long parsed = 0;
+            if (!parseUnsigned(argv[3], parsed) || parsed == 0 ||
+                parsed > std::numeric_limits<std::size_t>::max()) {
+                return reportOperation(false, {}, "trial count must be a positive integer");
+            }
+            trialsPerMode = static_cast<std::size_t>(parsed);
+        }
+        recoverx::BenchmarkReport report;
+        std::string error;
+        if (!recoverx::runBenchmarks(outputDirectory, trialsPerMode, report, error)) {
+            return reportOperation(false, {}, error);
+        }
+        std::cout << "Benchmark complete (" << report.trialsPerMode
+                  << " trials per corruption mode). Reports:\n  "
+                  << report.corruptionCsvPath << "\n  " << report.storageCsvPath << '\n';
         return 0;
     }
     if (command == "backup") {

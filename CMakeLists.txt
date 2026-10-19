@@ -16,6 +16,7 @@ add_library(recoverx_core
     src/registration.cpp
     src/verification.cpp
     src/sha256.cpp
+    src/benchmark.cpp
     src/recovery.cpp
     src/simulator.cpp
 )
@@ -50,6 +51,10 @@ add_test(NAME recoverx_recovery_integration_test COMMAND recoverx_recovery_integ
 add_executable(recoverx_simulator_test tests/simulator_test.cpp)
 target_link_libraries(recoverx_simulator_test PRIVATE recoverx_core)
 add_test(NAME recoverx_simulator_test COMMAND recoverx_simulator_test)
+
+add_executable(recoverx_benchmark_test tests/benchmark_test.cpp)
+target_link_libraries(recoverx_benchmark_test PRIVATE recoverx_core)
+add_test(NAME recoverx_benchmark_test COMMAND recoverx_benchmark_test)
 
 add_test(NAME recoverx_cli_integration_test
          COMMAND ${CMAKE_COMMAND}

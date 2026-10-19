@@ -16,7 +16,7 @@ RecoverX is a file backup and recovery project. Its command-line interface (CLI)
 | `corrupt <file> <version-id> <mode>` | Simulate corruption of a stored version. |
 | `bench` | Run integrity and storage experiments. |
 
-These commands describe the planned interface. They are not all implemented yet.
+All listed commands are implemented. `list` is an alias for `history`; `verify` accepts either a version ID or a file name followed by a version ID. `bench` accepts an optional output directory and trial count; it defaults to 1,000 trials per corruption mode and writes two CSV reports.
 
 ## 3. Corruption Modes
 
@@ -29,7 +29,7 @@ The simulator supports the following in-memory corruption modes:
 - `zero`: Replace all bytes with zero.
 - `deletechunk`: Clear the test data to simulate a deleted chunk.
 
-File-backed corruption requires integration with the storage implementation.
+File-backed corruption is integrated with the chunk store and does not modify the original source file. It refuses to corrupt a chunk shared by another valid manifest.
 
 ## 4. Integrity Verification
 
@@ -54,4 +54,4 @@ The CLI should:
 
 ## 6. Implementation Status
 
-The command descriptions above are a design specification. Actual availability depends on integration with the backup, storage, metadata, integrity, and recovery modules.
+Invalid commands and missing files or versions return a nonzero exit code with an explanatory error. `bench` outputs measured results only; it does not assume a detection rate in advance.

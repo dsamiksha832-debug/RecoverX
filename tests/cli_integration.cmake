@@ -79,5 +79,15 @@ if(NOT undone STREQUAL original)
     message(FATAL_ERROR "undo did not restore the previous contents")
 endif()
 
+set(benchmark_dir "${test_root}/benchmark reports")
+execute_process(COMMAND "${RECOVERX_EXE}" bench "${benchmark_dir}" 2 RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "benchmark command failed: ${result}")
+endif()
+if(NOT EXISTS "${benchmark_dir}/corruption_detection.csv" OR
+   NOT EXISTS "${benchmark_dir}/storage_efficiency.csv")
+    message(FATAL_ERROR "benchmark command did not produce both CSV reports")
+endif()
+
 file(REMOVE_RECURSE "${test_root}")
 message(STATUS "CLI integration test passed")

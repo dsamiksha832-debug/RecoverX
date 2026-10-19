@@ -43,6 +43,7 @@ recoverx recover <file> [store-dir]
 recoverx undo <file> [store-dir]
 recoverx corrupt <file> <version-id> <mode> [store-dir]
 recoverx checksum
+recoverx bench [output-dir] [trials-per-mode]
 recoverx help
 ```
 
@@ -62,6 +63,7 @@ Examples in PowerShell:
 .\build\recoverx.exe recover .\notes.txt
 .\build\recoverx.exe undo .\notes.txt
 .\build\recoverx.exe checksum
+.\build\recoverx.exe bench
 ```
 
 Supported corruption modes are `bitflip`, `burst`, `swap`, `truncate`, `zero`, and `deletechunk`. The simulator changes only store data, never the source file. To protect other snapshots that use content-deduplicated chunks, it refuses to mutate chunks referenced by another manifest.
@@ -69,6 +71,8 @@ Supported corruption modes are `bitflip`, `burst`, `swap`, `truncate`, `zero`, a
 `recover` checks versions newest first and restores the first valid one. `restore` writes a selected version to a destination. `undo` skips the newest snapshot and restores the newest valid earlier snapshot. Restores use a temporary file and atomic replacement.
 
 `undo` requires at least two snapshots. It keeps the history manifests unchanged, so repeating the same undo without making a new backup selects the same earlier snapshot again.
+
+`bench` runs the documented corruption-detection and storage-efficiency experiments. By default it performs 1,000 trials for each corruption mode and writes `corruption_detection.csv` and `storage_efficiency.csv` under `.recoverx/bench`. Pass an output directory and optional positive trial count to control the run. The storage report includes chunk and manifest bytes; generated experiment data is temporary and removed after the run.
 
 ## Project modules
 
