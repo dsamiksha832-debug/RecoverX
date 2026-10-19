@@ -85,8 +85,10 @@ if(NOT result EQUAL 0)
     message(FATAL_ERROR "benchmark command failed: ${result}")
 endif()
 if(NOT EXISTS "${benchmark_dir}/corruption_detection.csv" OR
-   NOT EXISTS "${benchmark_dir}/storage_efficiency.csv")
-    message(FATAL_ERROR "benchmark command did not produce both CSV reports")
+   NOT EXISTS "${benchmark_dir}/storage_efficiency.csv" OR
+   NOT EXISTS "${benchmark_dir}/benchmark_report.md" OR
+   NOT EXISTS "${benchmark_dir}/benchmark_summary.svg")
+    message(FATAL_ERROR "benchmark command did not produce all reports and chart")
 endif()
 
 file(REMOVE_RECURSE "${test_root}")

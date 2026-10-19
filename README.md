@@ -72,7 +72,7 @@ Supported corruption modes are `bitflip`, `burst`, `swap`, `truncate`, `zero`, a
 
 `undo` requires at least two snapshots. It keeps the history manifests unchanged, so repeating the same undo without making a new backup selects the same earlier snapshot again.
 
-`bench` runs the documented corruption-detection and storage-efficiency experiments. By default it performs 1,000 trials for each corruption mode and writes `corruption_detection.csv` and `storage_efficiency.csv` under `.recoverx/bench`. Pass an output directory and optional positive trial count to control the run. The storage report includes chunk and manifest bytes; generated experiment data is temporary and removed after the run.
+`bench` runs the documented corruption-detection and storage-efficiency experiments. By default it performs 1,000 trials for each corruption mode and writes `corruption_detection.csv`, `storage_efficiency.csv`, `benchmark_report.md`, and `benchmark_summary.svg` under `.recoverx/bench`. Pass an output directory and optional positive trial count to control the run. The storage report includes chunk and manifest bytes; generated experiment data is temporary and removed after the run.
 
 ## Project modules
 

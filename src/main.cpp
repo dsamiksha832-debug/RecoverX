@@ -155,7 +155,8 @@ int run(int argc, char** argv) {
         }
         std::cout << "Benchmark complete (" << report.trialsPerMode
                   << " trials per corruption mode). Reports:\n  "
-                  << report.corruptionCsvPath << "\n  " << report.storageCsvPath << '\n';
+                  << report.corruptionCsvPath << "\n  " << report.storageCsvPath
+                  << "\n  " << report.reportPath << "\n  " << report.chartPath << '\n';
         return 0;
     }
     if (command == "backup") {

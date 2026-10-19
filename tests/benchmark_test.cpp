@@ -41,6 +41,21 @@ int main() {
         return 1;
     }
 
+    if (!fs::exists(report.reportPath) || !fs::exists(report.chartPath)) {
+        std::cerr << "benchmark report or chart was not generated\n";
+        fs::remove_all(root, ec);
+        return 1;
+    }
+    std::ifstream summary(report.reportPath, std::ios::binary);
+    const std::string markdown(std::istreambuf_iterator<char>(summary), {});
+    if (markdown.find("## Corruption detection") == std::string::npos ||
+        markdown.find("## Storage efficiency") == std::string::npos ||
+        markdown.find("## Limitations") == std::string::npos) {
+        std::cerr << "benchmark report is missing required sections\n";
+        fs::remove_all(root, ec);
+        return 1;
+    }
+
     fs::remove_all(root, ec);
     std::cout << "benchmark tests passed\n";
     return 0;

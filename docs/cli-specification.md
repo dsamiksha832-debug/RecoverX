@@ -16,7 +16,7 @@ RecoverX is a file backup and recovery project. Its command-line interface (CLI)
 | `corrupt <file> <version-id> <mode>` | Simulate corruption of a stored version. |
 | `bench` | Run integrity and storage experiments. |
 
-All listed commands are implemented. `list` is an alias for `history`; `verify` accepts either a version ID or a file name followed by a version ID. `bench` accepts an optional output directory and trial count; it defaults to 1,000 trials per corruption mode and writes two CSV reports.
+All listed commands are implemented. `list` is an alias for `history`; `verify` accepts either a version ID or a file name followed by a version ID. `bench` accepts an optional output directory and trial count; it defaults to 1,000 trials per corruption mode and writes two CSV files, a Markdown report, and an SVG summary chart.
 
 ## 3. Corruption Modes
 

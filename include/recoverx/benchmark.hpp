@@ -8,6 +8,8 @@ namespace recoverx {
 struct BenchmarkReport {
     std::string corruptionCsvPath;
     std::string storageCsvPath;
+    std::string reportPath;
+    std::string chartPath;
     std::size_t trialsPerMode = 0;
 };
 
