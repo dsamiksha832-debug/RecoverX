@@ -1,12 +1,126 @@
 #include "recoverx/simulator.hpp"
 
+#include "recoverx/atomicio.hpp"
+#include "recoverx/chunkstore.hpp"
+#include "recoverx/manifest.hpp"
+
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <system_error>
+#include <unordered_set>
+#include <vector>
+
 namespace recoverx {
+namespace {
+
+std::string lowercase(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    return value;
+}
+
+bool isSupportedMode(const std::string& mode) {
+    return mode == "bitflip" || mode == "burst" || mode == "swap" ||
+           mode == "truncate" || mode == "zero" || mode == "deletechunk";
+}
+
+} // namespace
 
 bool corruptStoredVersion(const std::string& /*fileName*/,
                           unsigned long long /*versionId*/,
                           const std::string& /*mode*/) {
-    // TODO: only corrupt test-store data, never the user's source file.
+    // The compatibility signature has no store root, so it cannot locate safe target data.
     return false;
+}
+
+bool corruptStoredVersion(const std::string& fileName,
+                          const std::string& storeRoot,
+                          unsigned long long versionId,
+                          const std::string& mode) {
+    if (fileName.empty() || storeRoot.empty() || versionId == 0) return false;
+    const std::string normalizedMode = lowercase(mode);
+    if (!isSupportedMode(normalizedMode)) return false;
+
+    namespace fs = std::filesystem;
+    const fs::path manifestDirectory = fs::path(storeRoot) / "manifests";
+    const fs::path targetManifest = manifestDirectory /
+        ("version_" + std::to_string(versionId) + ".rxm");
+    VersionInfo target;
+    if (!readManifest(targetManifest.string(), target) ||
+        target.versionId != versionId || target.originalFileName != fileName ||
+        target.chunks.empty()) {
+        return false;
+    }
+
+    // Content-addressed chunks may be shared by different versions. Do not mutate
+    // a chunk if another valid manifest refers to it.
+    std::unordered_set<std::string> referencedByOtherVersions;
+    std::error_code ec;
+    fs::directory_iterator it(manifestDirectory, ec);
+    if (ec) return false;
+    const fs::directory_iterator end;
+    for (; it != end; it.increment(ec)) {
+        if (ec) return false;
+        std::error_code entryEc;
+        if (!it->is_regular_file(entryEc) || it->path() == targetManifest ||
+            it->path().extension() != ".rxm") continue;
+        VersionInfo other;
+        if (!readManifest(it->path().string(), other)) continue;
+        for (const ChunkInfo& chunk : other.chunks) {
+            referencedByOtherVersions.insert(chunk.sha256);
+        }
+    }
+
+    ChunkStore store(storeRoot);
+    store.scan();
+    std::string selectedId;
+    std::vector<std::uint8_t> bytes;
+    bool found = false;
+    for (const ChunkInfo& chunk : target.chunks) {
+        if (referencedByOtherVersions.count(chunk.sha256) != 0 ||
+            !ChunkStore::isValidContentId(chunk.sha256) ||
+            !store.get(chunk.sha256, bytes)) continue;
+        selectedId = chunk.sha256;
+        found = true;
+        break;
+    }
+    if (!found) return false;
+
+    if (normalizedMode == "deletechunk") {
+        return fs::remove(store.chunkPath(selectedId), ec) && !ec;
+    }
+    if (bytes.empty()) return false;
+
+    switch (normalizedMode.front()) {
+        case 'b':
+            if (normalizedMode == "bitflip") {
+                bytes[0] ^= 0x01u;
+            } else {
+                const std::size_t length = std::min<std::size_t>(8, bytes.size());
+                for (std::size_t i = 0; i < length; ++i) bytes[i] ^= 0xFFu;
+            }
+            break;
+        case 's':
+            if (bytes.size() < 2 || bytes[0] == bytes[1]) return false;
+            std::swap(bytes[0], bytes[1]);
+            break;
+        case 't':
+            bytes.pop_back();
+            break;
+        case 'z': {
+            const bool alreadyZero = std::all_of(bytes.begin(), bytes.end(),
+                [](std::uint8_t byte) { return byte == 0; });
+            if (alreadyZero) return false;
+            std::fill(bytes.begin(), bytes.end(), 0);
+            break;
+        }
+        default:
+            return false;
+    }
+
+    return atomicWriteFile(store.chunkPath(selectedId), bytes);
 }
 
 } // namespace recoverx

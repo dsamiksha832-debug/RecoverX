@@ -1,52 +1,74 @@
 # RecoverX
 
-RecoverX is a C++17 command-line project for versioned file backup, integrity checking, corruption simulation, and recovery.
+RecoverX is a local-first C++17 command-line tool for chunked file backups, version history, integrity verification, corruption simulation, and recovery.
 
-## Windows prerequisites
+## Requirements
 
-- VS Code
-- MinGW-w64 g++ (64-bit)
-- CMake
-- Git
+- Windows with MSYS2 UCRT64 / MinGW-w64 GCC
+- CMake 3.16 or newer
+- MinGW Make (`mingw32-make`)
 
-Check these commands in a NEW terminal:
+Check the tools in a new PowerShell terminal:
 
 ```powershell
 g++ --version
 cmake --version
-git --version
+mingw32-make --version
 ```
 
-If any command is not found, install/configure that tool and ensure its `bin` directory is on PATH.
+## Build and test
 
-## Configure, build, test
-
-Run from the project root in PowerShell:
+Run from the project root:
 
 ```powershell
 cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++
 cmake --build build
 ctest --test-dir build --output-on-failure
-.\build\recoverx.exe
 ```
 
-If CMake reports that it cannot find `mingw32-make`, install the MinGW-w64 make tool and add its `bin` folder to PATH. Another option is to use the Ninja generator if Ninja is installed.
+The build uses the real SHA-256 implementation in `src/sha256.cpp`; the test-only stub is not linked.
 
-## First milestone
+## CLI
 
-This starter only proves that the project builds, links separate modules, and runs a smoke test. It is NOT the completed backup engine yet.
+Run `.\build\recoverx.exe help` for usage. The store defaults to `.recoverx` under the current directory. Version IDs increase globally within a store.
 
-Next milestones:
-1. Implement and test checksum and CRC-32.
-2. Implement fixed-size binary chunk reading/writing.
-3. Store content-addressed chunks and manifests.
-4. Maintain version history.
-5. Verify and recover the newest valid version.
-6. Add controlled corruption, undo, crash-safe writes, and benchmarks.
+```text
+recoverx backup <file> [store-dir] [chunk-bytes]
+recoverx history <file> [store-dir]
+recoverx verify <version-id> [store-dir]
+recoverx restore <version-id> <output-file> [store-dir]
+recoverx recover <file> [store-dir]
+recoverx undo <file> [store-dir]
+recoverx corrupt <file> <version-id> <mode> [store-dir]
+recoverx help
+```
 
-## Team rules
+Examples in PowerShell:
 
-- Agree on public headers before parallel implementation.
-- Each member works on a feature branch.
-- Do not commit `.recoverx/` or real user files.
-- Merge only after tests pass.
+```powershell
+.\build\recoverx.exe backup .\notes.txt
+# Edit notes.txt, then save another snapshot.
+.\build\recoverx.exe backup .\notes.txt
+.\build\recoverx.exe history .\notes.txt
+.\build\recoverx.exe verify 2
+.\build\recoverx.exe restore 1 .\notes-restored.txt
+.\build\recoverx.exe corrupt .\notes.txt 2 bitflip
+.\build\recoverx.exe verify 2 # Expected to report CORRUPT and return a nonzero code.
+.\build\recoverx.exe recover .\notes.txt
+.\build\recoverx.exe undo .\notes.txt
+```
+
+Supported corruption modes are `bitflip`, `burst`, `swap`, `truncate`, `zero`, and `deletechunk`. The simulator changes only store data, never the source file. To protect other snapshots that use content-deduplicated chunks, it refuses to mutate chunks referenced by another manifest.
+
+`recover` checks versions newest first and restores the first valid one. `restore` writes a selected version to a destination. `undo` skips the newest snapshot and restores the newest valid earlier snapshot. Restores use a temporary file and atomic replacement.
+
+`undo` requires at least two snapshots. It keeps the history manifests unchanged, so repeating the same undo without making a new backup selects the same earlier snapshot again.
+
+## Project modules
+
+- **Integrity:** Internet checksum, CRC-32/ISO-HDLC, and incremental/one-shot SHA-256.
+- **Storage:** fixed-size streaming chunking, SHA-256 content-addressed chunk storage, deduplication, and crash-safe file replacement.
+- **Versions:** CRC-protected binary manifests and globally ordered version IDs per store.
+- **Recovery:** chunk and manifest verification, history, restore, newest-valid recovery, undo, and controlled corruption simulation.
+
+The `.recoverx/` runtime store and real user files must not be committed. Run the test suite before merging project changes.

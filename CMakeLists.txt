@@ -15,21 +15,11 @@ add_library(recoverx_core
     src/versionchain.cpp
     src/registration.cpp
     src/verification.cpp
+    src/sha256.cpp
     src/recovery.cpp
     src/simulator.cpp
 )
 target_include_directories(recoverx_core PUBLIC include)
-
-# SHA-256 is owned by the Integrity member (src/sha256.cpp). Until that file exists, tests that
-# exercise chunk storage or version recovery link a TEST-ONLY stub. Once src/sha256.cpp is merged,
-# it is picked up here automatically and the stub is no longer used.
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/sha256.cpp")
-    target_sources(recoverx_core PRIVATE src/sha256.cpp)
-    set(RECOVERX_SHA256_STUB "")
-else()
-    message(STATUS "src/sha256.cpp not found: tests use the TEST-ONLY sha256 stub")
-    set(RECOVERX_SHA256_STUB tests/stubs/sha256_stub.cpp)
-endif()
 
 if(MSVC)
     target_compile_options(recoverx_core PRIVATE /W4)
@@ -45,14 +35,23 @@ add_executable(recoverx_smoke_test tests/smoke_test.cpp)
 target_link_libraries(recoverx_smoke_test PRIVATE recoverx_core)
 add_test(NAME recoverx_smoke_test COMMAND recoverx_smoke_test)
 
-add_executable(recoverx_storage_test tests/storage_test.cpp ${RECOVERX_SHA256_STUB})
+add_executable(recoverx_storage_test tests/storage_test.cpp)
 target_link_libraries(recoverx_storage_test PRIVATE recoverx_core)
 add_test(NAME recoverx_storage_test COMMAND recoverx_storage_test)
 
-add_executable(recoverx_versioning_test tests/versioning_test.cpp ${RECOVERX_SHA256_STUB})
+add_executable(recoverx_versioning_test tests/versioning_test.cpp)
 target_link_libraries(recoverx_versioning_test PRIVATE recoverx_core)
 add_test(NAME recoverx_versioning_test COMMAND recoverx_versioning_test)
 
-add_executable(recoverx_recovery_integration_test tests/recovery_integration_test.cpp ${RECOVERX_SHA256_STUB})
+add_executable(recoverx_recovery_integration_test tests/recovery_integration_test.cpp)
 target_link_libraries(recoverx_recovery_integration_test PRIVATE recoverx_core)
 add_test(NAME recoverx_recovery_integration_test COMMAND recoverx_recovery_integration_test)
+
+add_executable(recoverx_simulator_test tests/simulator_test.cpp)
+target_link_libraries(recoverx_simulator_test PRIVATE recoverx_core)
+add_test(NAME recoverx_simulator_test COMMAND recoverx_simulator_test)
+
+add_test(NAME recoverx_cli_integration_test
+         COMMAND ${CMAKE_COMMAND}
+             -DRECOVERX_EXE=$<TARGET_FILE:recoverx>
+             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_integration.cmake)
