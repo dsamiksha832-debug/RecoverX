@@ -1,7 +1,12 @@
 #pragma once
+#include <cstdint>
 #include <string>
+#include <vector>
 
 namespace recoverx {
+
+// Apply the selected deterministic corruption mode to an in-memory test buffer.
+bool corruptData(std::vector<std::uint8_t>& data, const std::string& mode);
 
 // Compatibility entry point. A store root is required to locate stored chunks.
 bool corruptStoredVersion(const std::string& fileName,

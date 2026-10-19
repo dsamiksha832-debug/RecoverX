@@ -1,4 +1,6 @@
 #include "recoverx/chunkstore.hpp"
+#include "recoverx/checksum.hpp"
+#include "recoverx/crc32.hpp"
 #include "recoverx/manifest.hpp"
 #include "recoverx/registration.hpp"
 #include "recoverx/recovery.hpp"
@@ -27,11 +29,14 @@ void printUsage(std::ostream& out) {
         << "Usage:\n"
         << "  recoverx backup <file> [store-dir] [chunk-bytes]\n"
         << "  recoverx history <file> [store-dir]\n"
+        << "  recoverx list <file> [store-dir]\n"
         << "  recoverx verify <version-id> [store-dir]\n"
+        << "  recoverx verify <file> <version-id> [store-dir]\n"
         << "  recoverx restore <version-id> <output-file> [store-dir]\n"
         << "  recoverx recover <file> [store-dir]\n"
         << "  recoverx undo <file> [store-dir]\n"
         << "  recoverx corrupt <file> <version-id> <mode> [store-dir]\n"
+        << "  recoverx checksum\n"
         << "  recoverx help\n\n"
         << "Store directory defaults to .recoverx in the current directory.\n"
         << "Corruption modes: bitflip, burst, swap, truncate, zero, deletechunk.\n";
@@ -117,6 +122,13 @@ int run(int argc, char** argv) {
     }
 
     const std::string command = argv[1];
+    if (command == "checksum") {
+        const std::vector<std::uint8_t> sample{'R', 'e', 'c', 'o', 'v', 'e', 'r', 'X'};
+        std::cout << "CRC-32: 0x" << std::hex << recoverx::crc32(sample) << '\n'
+                  << "Internet checksum: 0x" << recoverx::internetChecksum(sample)
+                  << std::dec << '\n';
+        return 0;
+    }
     if (command == "backup") {
         if (argc < 3 || argc > 5) {
             printUsage(std::cerr);
@@ -142,7 +154,7 @@ int run(int argc, char** argv) {
         return 0;
     }
 
-    if (command == "history") {
+    if (command == "history" || command == "list") {
         if (argc < 3 || argc > 4) {
             printUsage(std::cerr);
             return 2;
@@ -151,18 +163,31 @@ int run(int argc, char** argv) {
     }
 
     if (command == "verify") {
-        if (argc < 3 || argc > 4) {
+        if (argc < 3 || argc > 5) {
             printUsage(std::cerr);
             return 2;
         }
+        std::string fileName;
         unsigned long long id = 0;
-        if (!parseUnsigned(argv[2], id) || id == 0) {
-            return reportOperation(false, {}, "version ID must be a positive integer");
+        std::string storeRoot = kDefaultStore;
+        unsigned long long firstArgument = 0;
+        if (parseUnsigned(argv[2], firstArgument)) {
+            id = firstArgument;
+            if (argc == 4) storeRoot = argv[3];
+        } else {
+            if (argc < 4 || !parseUnsigned(argv[3], id)) {
+                return reportOperation(false, {}, "expected a positive version ID");
+            }
+            fileName = argv[2];
+            if (argc == 5) storeRoot = argv[4];
         }
-        const std::string storeRoot = argc == 4 ? argv[3] : kDefaultStore;
+        if (id == 0) return reportOperation(false, {}, "version ID must be a positive integer");
         recoverx::VersionInfo version;
         if (!loadVersion(storeRoot, id, version)) {
             return reportOperation(false, {}, "manifest is missing or invalid");
+        }
+        if (!fileName.empty() && version.originalFileName != fileName) {
+            return reportOperation(false, {}, "version does not belong to the requested file");
         }
         recoverx::ChunkStore store(storeRoot);
         store.scan();

@@ -35,11 +35,14 @@ Run `.\build\recoverx.exe help` for usage. The store defaults to `.recoverx` und
 ```text
 recoverx backup <file> [store-dir] [chunk-bytes]
 recoverx history <file> [store-dir]
+recoverx list <file> [store-dir]
 recoverx verify <version-id> [store-dir]
+recoverx verify <file> <version-id> [store-dir]
 recoverx restore <version-id> <output-file> [store-dir]
 recoverx recover <file> [store-dir]
 recoverx undo <file> [store-dir]
 recoverx corrupt <file> <version-id> <mode> [store-dir]
+recoverx checksum
 recoverx help
 ```
 
@@ -50,12 +53,15 @@ Examples in PowerShell:
 # Edit notes.txt, then save another snapshot.
 .\build\recoverx.exe backup .\notes.txt
 .\build\recoverx.exe history .\notes.txt
+.\build\recoverx.exe list .\notes.txt
 .\build\recoverx.exe verify 2
+.\build\recoverx.exe verify .\notes.txt 2
 .\build\recoverx.exe restore 1 .\notes-restored.txt
 .\build\recoverx.exe corrupt .\notes.txt 2 bitflip
 .\build\recoverx.exe verify 2 # Expected to report CORRUPT and return a nonzero code.
 .\build\recoverx.exe recover .\notes.txt
 .\build\recoverx.exe undo .\notes.txt
+.\build\recoverx.exe checksum
 ```
 
 Supported corruption modes are `bitflip`, `burst`, `swap`, `truncate`, `zero`, and `deletechunk`. The simulator changes only store data, never the source file. To protect other snapshots that use content-deduplicated chunks, it refuses to mutate chunks referenced by another manifest.

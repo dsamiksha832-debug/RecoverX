@@ -199,6 +199,13 @@ static void testDedupRestoreScan(const fs::path& dir) {
     CHECK(readRaw(dir / "out1.bin") == v1);
     CHECK(s.restoreToFile(ids2, (dir / "out2.bin").string()));
     CHECK(readRaw(dir / "out2.bin") == v2);
+    // Restore over an existing file.
+    const fs::path outExisting = dir / "out_existing.bin";
+    writeRaw(outExisting, makeBytes(100, 99)); // old content
+
+    CHECK(s.restoreToFile(ids2, outExisting.string()));
+    CHECK(readRaw(outExisting) == v2);
+    CHECK(!fs::exists(outExisting.string() + ".tmp"));
 
     // A missing chunk makes the restore fail cleanly: no output file, no leftover temp file.
     fs::remove(s.chunkPath(ids1[2]));

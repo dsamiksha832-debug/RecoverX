@@ -32,6 +32,19 @@ static Bytes readBytes(const fs::path& path) {
 }
 
 int main() {
+    const std::string inMemoryModes[] = {"bitflip", "burst", "swap", "truncate", "zero", "deletechunk"};
+    for (const std::string& mode : inMemoryModes) {
+        Bytes inMemory{0x10, 0x20, 0x30, 0x40};
+        const Bytes before = inMemory;
+        CHECK(corruptData(inMemory, mode));
+        CHECK(inMemory != before);
+    }
+    Bytes unchanged{0x10, 0x20};
+    CHECK(!corruptData(unchanged, "not-a-mode"));
+    CHECK(unchanged == Bytes({0x10, 0x20}));
+    Bytes oneByte{0x10};
+    CHECK(!corruptData(oneByte, "swap"));
+
     const fs::path root = fs::temp_directory_path() / "recoverx_simulator_test";
     std::error_code ec;
     fs::remove_all(root, ec);

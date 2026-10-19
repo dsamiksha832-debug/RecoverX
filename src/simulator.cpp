@@ -28,6 +28,36 @@ bool isSupportedMode(const std::string& mode) {
 
 } // namespace
 
+bool corruptData(std::vector<std::uint8_t>& data, const std::string& mode) {
+    if (data.empty()) return false;
+    if (mode == "bitflip") {
+        data[0] ^= 0x01u;
+        return true;
+    }
+    if (mode == "burst") {
+        data[0] ^= 0x07u;
+        return true;
+    }
+    if (mode == "swap") {
+        if (data.size() < 2) return false;
+        std::swap(data.front(), data.back());
+        return true;
+    }
+    if (mode == "truncate") {
+        data.pop_back();
+        return true;
+    }
+    if (mode == "zero") {
+        std::fill(data.begin(), data.end(), 0);
+        return true;
+    }
+    if (mode == "deletechunk") {
+        data.clear();
+        return true;
+    }
+    return false;
+}
+
 bool corruptStoredVersion(const std::string& /*fileName*/,
                           unsigned long long /*versionId*/,
                           const std::string& /*mode*/) {
@@ -98,13 +128,12 @@ bool corruptStoredVersion(const std::string& fileName,
             if (normalizedMode == "bitflip") {
                 bytes[0] ^= 0x01u;
             } else {
-                const std::size_t length = std::min<std::size_t>(8, bytes.size());
-                for (std::size_t i = 0; i < length; ++i) bytes[i] ^= 0xFFu;
+                bytes[0] ^= 0x07u;
             }
             break;
         case 's':
-            if (bytes.size() < 2 || bytes[0] == bytes[1]) return false;
-            std::swap(bytes[0], bytes[1]);
+            if (bytes.size() < 2 || bytes.front() == bytes.back()) return false;
+            std::swap(bytes.front(), bytes.back());
             break;
         case 't':
             bytes.pop_back();
