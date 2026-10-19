@@ -19,6 +19,7 @@ add_library(recoverx_core
     src/benchmark.cpp
     src/recovery.cpp
     src/simulator.cpp
+    src/filehash.cpp
 )
 target_include_directories(recoverx_core PUBLIC include)
 
@@ -47,6 +48,10 @@ add_test(NAME recoverx_versioning_test COMMAND recoverx_versioning_test)
 add_executable(recoverx_recovery_integration_test tests/recovery_integration_test.cpp)
 target_link_libraries(recoverx_recovery_integration_test PRIVATE recoverx_core)
 add_test(NAME recoverx_recovery_integration_test COMMAND recoverx_recovery_integration_test)
+
+add_executable(recoverx_report_test tests/report_test.cpp)
+target_link_libraries(recoverx_report_test PRIVATE recoverx_core)
+add_test(NAME recoverx_report_test COMMAND recoverx_report_test)
 
 add_executable(recoverx_simulator_test tests/simulator_test.cpp)
 target_link_libraries(recoverx_simulator_test PRIVATE recoverx_core)

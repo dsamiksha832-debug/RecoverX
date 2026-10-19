@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -21,6 +22,13 @@ inline const char* toString(VersionStatus status) {
         case VersionStatus::Missing: return "MISSING";
     }
     return "UNKNOWN";
+}
+
+// True if two path strings name the same file as typed by the user ("a.txt" and "./a.txt").
+// Purely textual: it does not touch the disk.
+inline bool sameFilePath(const std::string& left, const std::string& right) {
+    return std::filesystem::path(left).lexically_normal() ==
+           std::filesystem::path(right).lexically_normal();
 }
 
 struct ChunkInfo {

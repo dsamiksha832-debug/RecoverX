@@ -10,3 +10,8 @@
 .idea/
 .DS_Store
 Thumbs.db
+
+# Demo / experiment output
+/demo_store/
+/demo_bench/
+/student_records.txt*

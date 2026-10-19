@@ -33,10 +33,15 @@ bool parseManifestId(const std::string& name, std::uint64_t& id) {
 
 } // namespace
 
-bool registerVersion(const std::string& sourcePath,
-                     const std::string& storeRoot,
-                     std::size_t chunkSize,
-                     VersionInfo& registeredVersion) {
+namespace {
+
+// Streams sourcePath into the store at storeRoot and publishes its manifest.
+// Backups use <store>; undo snapshots use <store>/undo, a separate store, so a corrupted
+// backup chunk can never make an undo snapshot unrestorable (and vice versa).
+bool registerInto(const std::string& sourcePath,
+                  const std::string& storeRoot,
+                  std::size_t chunkSize,
+                  VersionInfo& registeredVersion) {
     if (chunkSize == 0 || sourcePath.empty() || storeRoot.empty()) return false;
 
     namespace fs = std::filesystem;
@@ -87,6 +92,23 @@ bool registerVersion(const std::string& sourcePath,
     if (!writeManifest(manifestPath.string(), candidate)) return false;
     registeredVersion = std::move(candidate);
     return true;
+}
+
+} // namespace
+
+bool registerVersion(const std::string& sourcePath,
+                     const std::string& storeRoot,
+                     std::size_t chunkSize,
+                     VersionInfo& registeredVersion) {
+    return registerInto(sourcePath, storeRoot, chunkSize, registeredVersion);
+}
+
+bool snapshotForUndo(const std::string& sourcePath,
+                     const std::string& storeRoot,
+                     std::size_t chunkSize,
+                     VersionInfo& snapshot) {
+    namespace fs = std::filesystem;
+    return registerInto(sourcePath, (fs::path(storeRoot) / "undo").string(), chunkSize, snapshot);
 }
 
 } // namespace recoverx
