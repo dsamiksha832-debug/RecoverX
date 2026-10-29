@@ -169,15 +169,21 @@ int main() {
     writeBytes(undoSource, afterChange);
     VersionInfo afterVersion;
     CHECK(registerVersion(undoSource.string(), undoStoreRoot.string(), 3, afterVersion));
-    CHECK(undoLastChange(undoSource.string(), undoStoreRoot.string()));
+    // Nothing has been restored yet, so the undo stack is empty.
+    CHECK(!undoLastChange(undoSource.string(), undoStoreRoot.string()));
+    // Restoring the older version pushes the current file ("after") on the undo stack;
+    // undo then brings "after" back.
+    CHECK(restoreVersion(beforeVersion.versionId, undoStoreRoot.string(), undoSource.string()));
     CHECK(readBytes(undoSource) == beforeChange);
+    CHECK(undoLastChange(undoSource.string(), undoStoreRoot.string()));
+    CHECK(readBytes(undoSource) == afterChange);
 
     const fs::path singleVersionSource = root / "single-version.bin";
     const fs::path singleVersionStore = root / "single-version-store";
     writeBytes(singleVersionSource, afterChange);
     VersionInfo onlyVersion;
     CHECK(registerVersion(singleVersionSource.string(), singleVersionStore.string(), 3, onlyVersion));
-    CHECK(!undoLastChange(singleVersionSource.string(), singleVersionStore.string()));
+    CHECK(!undoLastChange(singleVersionSource.string(), singleVersionStore.string())); // nothing to undo
     CHECK(readBytes(singleVersionSource) == afterChange);
 
     fs::remove_all(root, ec);

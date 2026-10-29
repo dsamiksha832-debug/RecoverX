@@ -15,4 +15,12 @@ bool registerVersion(const std::string& sourcePath,
                      std::size_t chunkSize,
                      VersionInfo& registeredVersion);
 
+// Saves the current contents of sourcePath as an undo snapshot in a separate store at
+// <storeRoot>/undo (its own chunks/ and manifests/), never listed as a backup version.
+// Snapshot IDs increase within that store; the highest ID is the top of the undo stack.
+bool snapshotForUndo(const std::string& sourcePath,
+                     const std::string& storeRoot,
+                     std::size_t chunkSize,
+                     VersionInfo& snapshot);
+
 } // namespace recoverx

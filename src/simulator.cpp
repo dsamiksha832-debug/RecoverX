@@ -79,7 +79,7 @@ bool corruptStoredVersion(const std::string& fileName,
         ("version_" + std::to_string(versionId) + ".rxm");
     VersionInfo target;
     if (!readManifest(targetManifest.string(), target) ||
-        target.versionId != versionId || target.originalFileName != fileName ||
+        target.versionId != versionId || !sameFilePath(target.originalFileName, fileName) ||
         target.chunks.empty()) {
         return false;
     }

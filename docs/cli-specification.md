@@ -4,19 +4,26 @@
 
 RecoverX is a file backup and recovery project. Its command-line interface (CLI) will allow users to create backups, inspect saved versions, verify integrity, recover files, undo recovery, simulate corruption, and run experiments.
 
-## 2. Planned Commands
+## 2. Commands
 
 | Command | Purpose |
 |---|---|
-| `backup <file>` | Create a backup of the specified file. |
-| `list <file>` | Display the available backup versions. |
-| `verify <file> <version-id>` | Check the integrity of a selected version. |
-| `recover <file>` | Restore the latest valid version available. |
-| `undo <file>` | Undo the most recent recovery operation, if supported. |
-| `corrupt <file> <version-id> <mode>` | Simulate corruption of a stored version. |
-| `bench` | Run integrity and storage experiments. |
+| `backup <file> [store] [chunk-bytes]` | Back up the file as a new version (default chunk size 4096 bytes). |
+| `list <file> [store]` | Show version ID, backup time, size, status and chunk count. `history` is the same command. |
+| `verify <id> [store]` or `verify <file> <id> [store]` | Recompute CRC-32 and SHA-256 for every chunk; report which chunks failed and which check caught them. Exit code 1 if not VALID. |
+| `recover <file> [store] [--to <id>]` | Verify versions newest to oldest and restore the first valid one. With `--to`, try only that version. Prints a report. |
+| `restore <id> <output-file> [store]` | Verify one version and write it to the given path. |
+| `undo <file> [store]` | Pop the undo stack and bring back the file's contents from before the last recover or restore. |
+| `corrupt <file> <id> <mode> [store]` | Damage a stored chunk of that version on purpose. |
+| `hash <file>` | Print size, CRC-32, Internet checksum and SHA-256 of any file (streamed). |
+| `checksum` | Print the same three codes for a fixed sample string. |
+| `bench [dir] [trials]` | Run experiments E1 (detection) and E2 (storage); default 1,000 trials per mode. |
 
-All listed commands are implemented. `list` is an alias for `history`; `verify` accepts either a version ID or a file name followed by a version ID. `bench` accepts an optional output directory and trial count; it defaults to 1,000 trials per corruption mode and writes two CSV files, a Markdown report, and an SVG summary chart.
+A version ID may be written `2` or `V2`. Use the same file path text for `backup`, `list`, `verify`, `recover` and `undo` (`a.txt` and `./a.txt` count as the same file).
+
+Undo stack: before `recover` or `restore` overwrites an existing file, its current contents are saved in `<store>/undo` (a separate chunk store, so damage to backup chunks cannot affect it). `undo` restores the most recent entry and removes it, so repeating `undo` walks back through earlier states. `undo` does not push.
+
+Not in v1 (roadmap): XOR parity repair, Merkle tree, format validators, folder backup, scheduler, E3 to E6.
 
 ## 3. Corruption Modes
 
