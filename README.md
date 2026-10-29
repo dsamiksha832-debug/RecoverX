@@ -68,6 +68,20 @@ Examples in PowerShell:
 
 Supported corruption modes are `bitflip`, `burst`, `swap`, `truncate`, `zero`, and `deletechunk`. The simulator changes only store data, never the source file. To protect other snapshots that use content-deduplicated chunks, it refuses to mutate chunks referenced by another manifest.
 
+## Light-theme demonstration UI
+
+The local browser UI exposes every implemented CLI operation and runs the existing executable. Build the project, then start the UI from the project root:
+
+```powershell
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=g++
+cmake --build build
+node .\ui\server.js
+```
+
+Open `http://127.0.0.1:8765` in a browser. Keep the terminal open while presenting; press `Ctrl+C` to stop the local server. The UI uses `recoverx-demo/sample.txt` and stores its demonstration data under `.recoverx/ui-demo-store`.
+
+For a recovery presentation, create a backup, edit the sample file, create a second backup, then corrupt and verify the newer version before running Auto recover. The recovered file should contain the earlier valid contents. The source file is not changed by the corruption operation itself.
+
 `recover` checks versions newest first and restores the first valid one. `restore` writes a selected version to a destination. `undo` skips the newest snapshot and restores the newest valid earlier snapshot. Restores use a temporary file and atomic replacement.
 
 `undo` requires at least two snapshots. It keeps the history manifests unchanged, so repeating the same undo without making a new backup selects the same earlier snapshot again.

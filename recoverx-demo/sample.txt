@@ -1,0 +1,6 @@
+RecoverX faculty demonstration sample
+
+This small file is used to demonstrate versioned backups, chunk storage,
+integrity verification, corruption detection, and recovery.
+
+Edit this text and create another backup to build version history.

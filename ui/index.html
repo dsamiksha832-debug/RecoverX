@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>RecoverX · File recovery console</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="RecoverX home">
+        <span class="brand-mark">R<span>↗</span></span>
+        <span><strong>RecoverX</strong><small>FILE RECOVERY CONSOLE</small></span>
+      </a>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="nav-list" aria-label="Workspace">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">▦</span> Overview</button>
+      </nav>
+      <div class="nav-label nav-label-spaced">OPERATIONS</div>
+      <nav class="nav-list" aria-label="RecoverX operations">
+        <button class="nav-item" data-view="backup"><span class="nav-icon">＋</span> Create backup</button>
+        <button class="nav-item" data-view="history"><span class="nav-icon">◷</span> Version history</button>
+        <button class="nav-item" data-view="verify"><span class="nav-icon">✓</span> Verify integrity</button>
+        <button class="nav-item" data-view="restore"><span class="nav-icon">↙</span> Restore version</button>
+        <button class="nav-item" data-view="recover"><span class="nav-icon">⟳</span> Auto recover</button>
+        <button class="nav-item" data-view="undo"><span class="nav-icon">↶</span> Undo latest change</button>
+        <button class="nav-item" data-view="corrupt"><span class="nav-icon">⚡</span> Simulate corruption</button>
+        <button class="nav-item" data-view="checksum"><span class="nav-icon">⌗</span> Checksums</button>
+        <button class="nav-item" data-view="bench"><span class="nav-icon">▤</span> Benchmarks</button>
+        <button class="nav-item" data-view="help"><span class="nav-icon">?</span> CLI help</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="status-dot"></span>
+        <span><strong id="server-status">Checking local engine…</strong><small id="engine-path">Local demo session</small></span>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>RecoverX</span><span class="crumb-sep">/</span><strong id="crumb-current">Overview</strong></div>
+        <div class="topbar-right"><span class="local-pill"><span></span> LOCAL ONLY</span><span class="avatar">RX</span></div>
+      </header>
+
+      <section class="view active" id="view-overview">
+        <div class="welcome-row">
+          <div><div class="eyebrow">FILE INTEGRITY &amp; RECOVERY</div><h1>Good day. Let’s protect your files.</h1><p class="subtitle">A clear workspace for versioned backups, integrity checks, and recovery demos.</p></div>
+          <button class="button button-primary" data-go="backup"><span>＋</span> Create a backup</button>
+        </div>
+        <div class="hero-card">
+          <div class="hero-copy"><span class="hero-kicker">HOW RECOVERX WORKS</span><h2>Every file gets a way back.</h2><p>RecoverX splits files into chunks, stores them by SHA-256 hash, and keeps version manifests so you can verify and restore earlier copies.</p><button class="text-button" data-go="help">Explore every operation <span>→</span></button></div>
+          <div class="hero-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="file-tile tile-back"><i></i><i></i><i></i></div><div class="file-tile tile-front"><div class="file-icon">▤</div><i></i><i></i><i></i><span class="shield">✓</span></div><span class="spark spark-one">✦</span><span class="spark spark-two">✧</span></div>
+        </div>
+        <div class="section-heading"><div><div class="eyebrow">PRESENTATION FLOW</div><h2>Show the recovery story</h2></div><span class="muted-label">A simple 4-step demo</span></div>
+        <div class="flow-grid">
+          <button class="flow-card" data-go="backup"><span class="step-no">01</span><span class="flow-icon blue">＋</span><strong>Back up a file</strong><small>Create two versions, editing the sample between backups.</small><span class="flow-arrow">↗</span></button>
+          <button class="flow-card" data-go="corrupt"><span class="step-no">02</span><span class="flow-icon amber">⚡</span><strong>Simulate damage</strong><small>Corrupt the newest version to demonstrate detection.</small><span class="flow-arrow">↗</span></button>
+          <button class="flow-card" data-go="verify"><span class="step-no">03</span><span class="flow-icon violet">✓</span><strong>Verify integrity</strong><small>Check a version and see its integrity status.</small><span class="flow-arrow">↗</span></button>
+          <button class="flow-card" data-go="recover"><span class="step-no">04</span><span class="flow-icon green">⟳</span><strong>Recover a good copy</strong><small>Restore the newest version that still verifies.</small><span class="flow-arrow">↗</span></button>
+        </div>
+        <div class="bottom-grid">
+          <article class="info-card"><div class="card-title-row"><div class="mini-icon">◈</div><div><h3>What’s inside</h3><p>Project capabilities ready to demonstrate</p></div></div><div class="capability-list"><span><b>01</b> Chunked, deduplicated storage</span><span><b>02</b> Version history and manifests</span><span><b>03</b> SHA-256, CRC-32 and Internet checksum</span><span><b>04</b> Restore, recover and undo</span><span><b>05</b> Corruption simulation and benchmarks</span></div></article>
+          <article class="info-card demo-note"><div class="note-icon">✦</div><h3>Made for a live demo</h3><p>Use <code>recoverx-demo/sample.txt</code>. Back it up twice, changing the text between saves. Corrupt the newer version, verify it, then recover to the previous valid copy. The UI runs the real executable.</p><button class="text-button" data-go="backup">Start with a backup <span>→</span></button></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-backup"><div class="page-heading"><div class="eyebrow">OPERATIONS / STORAGE</div><h1>Create a backup</h1><p>Capture the current contents as a new version in the chunk store.</p></div><div class="work-grid"><article class="form-card"><form data-command="backup"><label>Source file <input name="file" value="recoverx-demo/sample.txt" required></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><label>Chunk size <span class="input-note">Bytes · optional, defaults to 4 MiB</span><input name="chunkBytes" type="number" min="1" placeholder="4194304"></label><button class="button button-primary" type="submit">＋ Create backup</button></form></article><aside class="explain-card"><span class="explain-icon blue">◈</span><h3>What happens</h3><p>RecoverX reads the source in chunks, hashes each chunk with SHA-256, stores new chunk data only once, and writes a version manifest.</p><div class="callout">The source file stays in place. A new version ID appears in the result.</div></aside></div></section>
+
+      <section class="view" id="view-history"><div class="page-heading"><div class="eyebrow">OPERATIONS / VERSIONS</div><h1>Version history</h1><p>List saved versions for a file and see each version’s integrity status.</p></div><div class="work-grid"><article class="form-card"><form data-command="history"><label>Source file <input name="file" value="recoverx-demo/sample.txt" required></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><div class="button-row"><button class="button button-primary" type="submit">◷ Show history</button><button class="button button-secondary" type="button" data-run-alias="list">Run list alias</button></div></form></article><aside class="explain-card"><span class="explain-icon violet">◷</span><h3>History and list</h3><p>Both commands show matching versions newest first, including size, status, and chunk count.</p><div class="callout">Create at least one backup first to populate the history.</div></aside></div></section>
+
+      <section class="view" id="view-verify"><div class="page-heading"><div class="eyebrow">OPERATIONS / INTEGRITY</div><h1>Verify integrity</h1><p>Validate a saved version’s manifest and stored chunks.</p></div><div class="work-grid"><article class="form-card"><form data-command="verify"><label>Version ID <input name="versionId" type="number" min="1" placeholder="e.g. 1" required></label><label>Source file <span class="input-note">Optional · also confirm the version belongs to this file</span><input name="verifyFile" placeholder="recoverx-demo/sample.txt"></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><button class="button button-primary" type="submit">✓ Verify version</button></form></article><aside class="explain-card"><span class="explain-icon green">✓</span><h3>Integrity status</h3><p>A valid version reports <strong>OK</strong>. If stored data has been altered, verification reports <strong>CORRUPT</strong> and the command returns a nonzero status.</p><div class="callout">Try this after the corruption demo to show detection.</div></aside></div></section>
+
+      <section class="view" id="view-restore"><div class="page-heading"><div class="eyebrow">OPERATIONS / RESTORE</div><h1>Restore a version</h1><p>Write one selected version to a destination file.</p></div><div class="work-grid"><article class="form-card"><form data-command="restore"><label>Version ID <input name="versionId" type="number" min="1" placeholder="e.g. 1" required></label><label>Output file <input name="outputFile" value="recoverx-demo/restored-sample.txt" required></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><button class="button button-primary" type="submit">↙ Restore version</button></form></article><aside class="explain-card"><span class="explain-icon blue">↙</span><h3>Safe restoration</h3><p>The chosen version is reconstructed from its chunks and written to the destination you specify.</p><div class="callout">Use a separate output path to keep the original sample unchanged.</div></aside></div></section>
+
+      <section class="view" id="view-recover"><div class="page-heading"><div class="eyebrow">OPERATIONS / RECOVERY</div><h1>Auto recover</h1><p>Scan versions newest first and restore the newest one that passes verification.</p></div><div class="work-grid"><article class="form-card"><form data-command="recover"><label>Target file <input name="file" value="recoverx-demo/sample.txt" required></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><button class="button button-primary" type="submit">⟳ Recover newest valid version</button></form></article><aside class="explain-card"><span class="explain-icon green">⟳</span><h3>Automatic selection</h3><p>RecoverX checks saved versions from newest to oldest, then restores the first valid version to the target file.</p><div class="callout warning">Recovery replaces the target file with the recovered contents.</div></aside></div></section>
+
+      <section class="view" id="view-undo"><div class="page-heading"><div class="eyebrow">OPERATIONS / RECOVERY</div><h1>Undo latest change</h1><p>Restore the newest valid version before the latest snapshot.</p></div><div class="work-grid"><article class="form-card"><form data-command="undo"><label>Target file <input name="file" value="recoverx-demo/sample.txt" required></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><button class="button button-primary" type="submit">↶ Undo latest change</button></form></article><aside class="explain-card"><span class="explain-icon amber">↶</span><h3>Step back one version</h3><p>Undo skips the latest snapshot and restores the newest valid earlier version to the target file.</p><div class="callout warning">Undo needs at least two saved versions and replaces the target file.</div></aside></div></section>
+
+      <section class="view" id="view-corrupt"><div class="page-heading"><div class="eyebrow">OPERATIONS / DEMO TOOLS</div><h1>Simulate corruption</h1><p>Introduce controlled damage to a stored version to demonstrate integrity checking.</p></div><div class="work-grid"><article class="form-card"><form data-command="corrupt"><label>Source file <input name="file" value="recoverx-demo/sample.txt" required></label><label>Version ID <input name="versionId" type="number" min="1" placeholder="e.g. 1" required></label><label>Corruption mode <select name="mode"><option value="bitflip">bitflip · flip one bit</option><option value="burst">burst · flip several bits</option><option value="swap">swap · exchange first and last bytes</option><option value="truncate">truncate · remove last byte</option><option value="zero">zero · replace bytes with zero</option><option value="deletechunk">deletechunk · remove chunk data</option></select></label><label>Store directory <input name="store" value=".recoverx/ui-demo-store"></label><button class="button button-danger" type="submit">⚡ Apply corruption</button></form></article><aside class="explain-card"><span class="explain-icon amber">⚡</span><h3>Controlled simulation</h3><p>Only the selected stored version is targeted. RecoverX protects chunks shared by other manifests and never changes the source during this operation.</p><div class="callout warning">Use a demo backup. Then verify it and run Auto recover to show the fallback.</div></aside></div></section>
+
+      <section class="view" id="view-checksum"><div class="page-heading"><div class="eyebrow">OPERATIONS / INTEGRITY</div><h1>Checksum comparison</h1><p>Run the checksum demonstration on a sample input.</p></div><div class="work-grid"><article class="form-card"><form data-command="checksum"><div class="sample-data"><span class="sample-badge">SAMPLE PAYLOAD</span><code>RecoverX</code><small>The checksum command uses this built-in sample text.</small></div><button class="button button-primary" type="submit">⌗ Calculate checksums</button></form></article><aside class="explain-card"><span class="explain-icon violet">⌗</span><h3>Checksums included</h3><p>This command displays the CRC-32 and Internet checksum values for a short sample payload.</p><div class="callout">SHA-256 is used for chunk addressing and verification during backup and recovery.</div></aside></div></section>
+
+      <section class="view" id="view-bench"><div class="page-heading"><div class="eyebrow">OPERATIONS / EXPERIMENTS</div><h1>Run benchmarks</h1><p>Measure corruption detection and storage efficiency across the supported modes.</p></div><div class="work-grid"><article class="form-card"><form data-command="bench"><label>Output directory <input name="outputDir" value=".recoverx/ui-demo-bench"></label><label>Trials per mode <span class="input-note">Defaults to 1,000 if left blank</span><input name="trials" type="number" min="1" placeholder="10 for a quick demo"></label><button class="button button-primary" type="submit">▤ Run benchmark</button></form></article><aside class="explain-card"><span class="explain-icon blue">▤</span><h3>Generated reports</h3><p>The experiment writes corruption and storage CSVs, a Markdown report, and an SVG chart to the output directory.</p><div class="callout">Use 10 trials for a quick presentation; increase it for a longer experiment.</div></aside></div></section>
+
+      <section class="view" id="view-help"><div class="page-heading"><div class="eyebrow">OPERATIONS / REFERENCE</div><h1>CLI help</h1><p>Show the command list and supported corruption modes directly from the executable.</p></div><div class="work-grid"><article class="form-card"><form data-command="help"><button class="button button-primary" type="submit">? Show CLI help</button></form></article><aside class="explain-card"><span class="explain-icon violet">?</span><h3>Every implemented command</h3><p>Backup · history · list · verify · restore · recover · undo · corrupt · checksum · bench · help</p><div class="callout">All operations on the left call the existing RecoverX command-line executable.</div></aside></div></section>
+
+      <section class="result-dock" id="result-dock" aria-live="polite" hidden>
+        <div class="result-header"><div><span class="eyebrow">LATEST RESULT</span><h2 id="result-title">Operation output</h2></div><button class="icon-button" id="dismiss-result" aria-label="Dismiss result">×</button></div>
+        <div class="command-line"><span>$</span><code id="result-command"></code><button id="copy-command" class="copy-button" type="button">Copy</button></div>
+        <pre id="result-output"></pre>
+      </section>
+      <footer class="footer"><span>RecoverX · Local-first backup and recovery</span><span>SHA-256 chunk storage <i></i> C++17</span></footer>
+    </main>
+  </div>
+</body>
+</html>
